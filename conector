@@ -1,0 +1,502 @@
+function myFunction() {
+  
+}
+    function getAccount(){
+        var Account = [
+            {label:'MAMBA / DNA', valor:'2332112596887724'},
+            {label:'O Poder da Assinatura', valor:'831831557323152'}
+        ]
+        return Account
+    }
+   
+    function getDimension(){
+        var dimension = [
+            {label:'Account',valor:'account',type:'TEXT'},
+            {label:'Campaign',valor:'campaign',type:'TEXT'},
+            {label:'Ad Set',valor:'adset',type:'TEXT'},
+            {label:'Ad',valor:'ad',type:'TEXT'},
+        ]
+        return dimension
+    }
+      
+    function mapLevel(){
+        level = {
+        'account' : 'account_id,account_name',
+        'campaign' : 'account_id,account_name,campaign_id,campaign_name',
+        'adset' : 'account_id,account_name,campaign_id,campaign_name,adset_id,adset_name',
+        'ad' : 'account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name'  
+        }
+        return level
+    }
+   
+    function getColumn(){
+        var column = [
+            {label:'Amount Spent',valor:'spend',type:'CURRENCY_BRL',aggregations:'SUM'},//soma
+            {label:'Reach',valor:'reach',type:'NUMBER',aggregations:'SUM'},//soma
+            {label:'Impressions',valor:'impressions',type:'NUMBER',aggregations:'SUM'},//soma
+            {label:'Frequency',valor:'frequency',type:'NUMBER',aggregations:'AVG'},//avg
+            {label:'Unique Outbound CTR',valor:'unique_outbound_clicks_ctr',type:'PERCENT',aggregations:'AVG'},//avg
+            {label:'CTR (Link Click-Through Rate)',valor:'inline_link_click_ctr',type:'PERCENT',aggregations:'AVG'},//avg
+            {label:'Unique Outbound Clicks',valor:'unique_outbound_clicks',type:'NUMBER',aggregations:'AVG'},//avg
+            {label:'Cost per Unique Outbound Click',valor:'cost_per_unique_outbound_click',type:'CURRENCY_BRL',aggregations:'AVG'},//avg
+            {label:'Outbound Clicks',valor:'outbound_clicks',type:'NUMBER',aggregations:'SUM'},//soma
+            {label:'Cost per Outbound Click',valor:'cost_per_outbound_click',type:'CURRENCY_BRL',aggregations:'AVG'},//avg
+            {label:'Cost per 1,000 People Reached',valor:'cpp',type:'CURRENCY_BRL',aggregations:'AVG'},//avg
+            {label:'CPM (Cost per 1,000 Impressions)',valor:'cpm',type:'CURRENCY_BRL',aggregations:'AVG'},//avg
+            {label:'Video View 50%',valor:'video_p50_watched_actions',type:'NUMBER',aggregations:'AVG'},//avg
+            {label:'Video View 75%',valor:'video_p75_watched_actions',type:'NUMBER',aggregations:'AVG'},//avg
+            {label:'Video View 95%',valor:'video_p95_watched_actions',type:'NUMBER',aggregations:'AVG'},//avg
+            {label:'Purchase',valor:'conversions',type:'NUMBER',aggregations:'AVG'},//avg
+            {label:'Cost per conversation',valor:'cost_per_conversion',type:'CURRENCY_BRL',aggregations:'AVG'},//avg
+            
+            //Custom labels
+            {label:'Initiate Checkout',valor:'offsite_conversion.fb_pixel_initiate_checkout',type:'NUMBER',aggregations:'SUM'},//soma
+            {label:'Lead - Lucro Previsível',valor:'actions_Lead_Lucro_Previsivel',type:'NUMBER',aggregations:'SUM'},//soma
+            {label:'View Page CPL1 - Lucro Previsível',valor:'actions_View_Page_CPL1_Lucro_Previsivel',type:'NUMBER',aggregations:'SUM'},//soma
+            {label:'View Page CPL2 - Lucro Previsível',valor:'actions_View_Page_CPL2_Lucro_Previsivel',type:'NUMBER',aggregations:'SUM'},//soma
+            {label:'View Page CPL3 - Lucro Previsível',valor:'actions_View_Page_CPL3_Lucro_Previsivel',type:'NUMBER',aggregations:'SUM'},//soma
+            {label:'View Page CPL4 - Lucro Previsível',valor:'actions_View_Page_CPL4_Lucro_Previsivel',type:'NUMBER',aggregations:'SUM'},//soma
+        ]
+        return column
+    }
+   
+    function getToken(){
+        return 'EAADmbaTqZCwMBAAM0OHQmQ0bUUeJ0vMBY8sQDiE2SLeq16g5525fyjTZBTR0WmB7Je76JD9MaVZC9fPhxwr7P1eZA8cEs1GvN7QE0U4PflewRerti3Vcpk7EHUBwONIKL6GfwffDfwJwDqMWdzm82TCu1RZCxdpIuDKhMyQFPKcTW7vYpMsBrnpbDtn5BxZC4ZD'
+    }
+
+   //////////////////////////////////////////
+   /////////Conector Data Studio////////////
+   //////////////////////////////////////////
+   
+   /**
+    * getAuthType()
+    * Desc - Função para identificar o método de autenticação
+    */
+    function getAuthType() {
+        var response = { type: 'NONE' };
+        return response;
+    }
+      
+    function getConfig(request) {
+        var cc = DataStudioApp.createCommunityConnector();
+        var config = cc.getConfig();
+        
+        config.newInfo()
+        .setId('instructions')
+        .setText('Configuração da API do FB');
+
+        //Dados para gerar os formularios
+        var dimension = getDimension()  
+        var column = getColumn()
+        var  account = getAccount()
+        
+        var AccountForm = config.newSelectMultiple()
+        .setId("account")
+        .setName("Account")
+        .setHelpText("Account")
+        
+        for(var i  in account){
+            var option = config.newOptionBuilder().setLabel(account[i].label).setValue(account[i].valor);
+            AccountForm.addOption(option)
+        }
+        
+        //Gera o formulario das dimensões
+        var dimensionForm = config.newSelectSingle()
+        .setId("dimensions")
+        .setName("Level")
+        .setHelpText("Level dos dados")
+        
+        for(var i  in dimension){
+            var option = config.newOptionBuilder().setLabel(dimension[i].label).setValue(dimension[i].valor);
+            dimensionForm.addOption(option)
+        }
+    
+        //Gera o formulario das Colunas
+        var columnForm = config.newSelectMultiple()
+        .setId("column")
+        .setName("Colunas")
+        .setHelpText("Colunas utilizadas para criar relatorio do GAM")
+            
+        for(var i  in column){
+            var option = config.newOptionBuilder().setLabel(column[i].label).setValue(column[i].valor);
+            columnForm.addOption(option)
+        }
+    
+        var checkbox = config.newCheckbox()
+                    .setId("date")
+                    .setName("Separate by date")
+                    .setHelpText("Separate by date")  
+        
+        var checkbox = config.newCheckbox()
+                    .setId("budget")
+                    .setName("Budget")
+                    .setHelpText("Budget")  
+        
+        var checkbox = config.newCheckbox()
+                    .setId("status")
+                    .setName("Status campaign")
+                    .setHelpText("Status campaign")
+        
+        var checkbox = config.newCheckbox()
+                    .setId("joinId")
+                    .setName("join name id")
+                    .setHelpText("join name id")
+        
+        config.setDateRangeRequired(true);
+        
+        return config.build();
+    }
+   
+   /**
+    * getFields()
+    * Desc - Define a estrutura dos dados
+    */
+    function getFields(request) {
+        var cc = DataStudioApp.createCommunityConnector();
+        var fields = cc.getFields();
+        var types = cc.FieldType;
+        var aggregations = cc.AggregationType;
+        
+        var dimension = [
+        {label:'Account id',valor:'account_id',type:'TEXT'},
+        {label:'Account name',valor:'account_name',type:'TEXT'},
+        {label:'Campaign id',valor:'campaign_id',type:'TEXT'},
+        {label:'Campaign name',valor:'campaign_name',type:'TEXT'},
+        {label:'Adset id',valor:'adset_id',type:'TEXT'},
+        {label:'Adset name',valor:'adset_name',type:'TEXT'},
+        {label:'Ad id',valor:'ad_id',type:'TEXT'},
+        {label:'Ad name',valor:'ad_name',type:'TEXT'},
+        ] 
+        var column = getColumn()
+        
+        var dimensionsArr = mapLevel()[request.configParams.dimensions].split(',')
+        var columnArr = request.configParams.column.split(',')
+        
+        if(request.configParams.date){
+            columnfields = fields.newDimension().setId("date").setName("Date").setType(types['YEAR_MONTH_DAY'])
+        }
+        
+        for(i in dimensionsArr){
+            var iten = dimension.find(element => element.valor == dimensionsArr[i])
+            var dimensionsfields = fields.newDimension().setId(iten.valor).setName(iten.label)
+            if(iten.type){
+            dimensionsfields.setType(types[iten.type]);
+            }
+            
+            if(iten.aggregations){
+            dimensionsfields.setAggregation(aggregations[iten.aggregations]);
+            }
+        }
+        
+        for(i in columnArr){
+            var iten = column.find(element => element.valor == columnArr[i])
+            var columnfields = fields.newMetric().setId(iten.valor).setName(iten.label)
+            if(iten.type){
+                columnfields.setType(types[iten.type]);
+            }
+            
+            if(iten.aggregations){
+                columnfields.setAggregation(aggregations[iten.aggregations]);
+            }
+        }
+        
+        if(request.configParams.status){
+            columnfields = fields.newMetric().setId("effective_status").setName("Status").setType(types['TEXT']).setAggregation(aggregations['COUNT'])
+        }
+        
+        if(request.configParams.budget){
+            columnfields = fields.newMetric().setId("daily_budget").setName("Daily Budget").setType(types['CURRENCY_BRL']).setAggregation(aggregations['SUM'])
+        }
+        
+        return fields;
+    }
+   
+    function getSchema(request) {
+        var fields = getFields(request).build();
+        return { schema: fields };
+    }
+   
+   /**
+    * responseToRows()
+    * Desc - transforma o json em array
+    */
+    function responseToRows(requestedFields, response,configParam) {
+        // Transform parsed data and filter for requested fields
+        var ArrFields = requestedFields.asArray()
+        return response.map(function(data) {
+            var row = [];
+            ArrFields.forEach(function (field) {
+            switch (field.getId()) {
+                case 'actions_Quiz_Lead':
+                    if(!data['actions']){
+                        return row.push(0);
+                    }
+                    var iten = data['actions'].find(function(iten){return (iten['action_type'] == "offsite_conversion.custom.220987758966192") || (iten['action_type'] ==  "offsite_conversion.custom.514354365920273") || (iten['action_type'] ==  "offsite_conversion.custom.3963296820362294")})
+                    if(iten){
+                        return row.push(iten['value']);
+                    }
+                    else{
+                        return row.push(0);
+                    }
+                
+                case 'actions_Quiz_Lead_UTUA':
+                    if(!data['actions']){
+                        return row.push(0);
+                    }
+                    var iten = data['actions'].find(function(iten){return (iten['action_type'] == "offsite_conversion.custom.287984145937265")})
+                    if(iten){
+                        return row.push(iten['value']);
+                    }
+                    else{
+                        return row.push(0);
+                    }
+                
+                case 'cost_per_action_type_Quiz_Lead':
+                    if(!data['cost_per_action_type']){
+                        return row.push(0);
+                    }
+                    var iten = data['cost_per_action_type'].find(function(iten){return (iten['action_type'] == "offsite_conversion.custom.220987758966192") || (iten['action_type'] ==  "offsite_conversion.custom.514354365920273")  || (iten['action_type'] ==  "offsite_conversion.custom.3963296820362294")})
+                    if(iten){
+                        return row.push(iten['value']);
+                    }else{
+                        return row.push(0);
+                    }
+                
+                case 'cost_per_action_type_Quiz_Lead_UTUA':
+                    if(!data['cost_per_action_type']){
+                        return row.push(0);
+                    }
+                    var iten = data['cost_per_action_type'].find(function(iten){return (iten['action_type'] == "offsite_conversion.custom.287984145937265")})
+                    if(iten){
+                        return row.push(iten['value']);
+                    }else{
+                        return row.push(0);
+                    }
+                case 'unique_outbound_clicks_ctr':
+                    return row.push(data['unique_outbound_clicks_ctr'].find(function(iten){return iten['action_type'] == "outbound_click"})['value']/100);
+                case 'cost_per_unique_outbound_click':
+                    return row.push(data['cost_per_unique_outbound_click'].find(function(iten){return iten['action_type'] == "outbound_click"})['value']);
+                case 'outbound_clicks':
+                    return row.push(data['outbound_clicks'].find(function(iten){return iten['action_type'] == "outbound_click"})['value']);
+                case 'cost_per_outbound_click':
+                    return row.push(data['cost_per_outbound_click'].find(function(iten){return iten['action_type'] == "outbound_click"})['value']);
+                case 'unique_outbound_clicks':
+                    return row.push(data['unique_outbound_clicks'].find(function(iten){return iten['action_type'] == "outbound_click"})['value']);
+                case 'daily_budget':
+                    return row.push(data['daily_budget']/100);
+                case 'effective_status':
+                    return row.push(data['effective_status']);
+                case 'date':
+                    return row.push(data['date_start'].split('-').join(''));
+                case 'account_name':
+                    if(configParam.joinId){
+                        return row.push(data['account_name']+' ('+data['account_id']+')');
+                    }
+                    else{
+                        return row.push(data['account_name']);
+                    }
+                case 'campaign_name':
+                    if(configParam.joinId){
+                        return row.push(data['campaign_name']+' ('+data['campaign_id']+')');
+                    }
+                    else{
+                        return row.push(data['campaign_name']);
+                    }
+                case 'adset_name':
+                    if(configParam.joinId){
+                        return row.push(data['adset_name']+' ('+data['adset_id']+')');
+                    }
+                    else{
+                        return row.push(data['adset_name']);
+                    }
+                case 'ad_name':
+                    if(configParam.joinId){
+                        return row.push(data['ad_name']+' ('+data['ad_id']+')');
+                    }
+                    else{
+                        return row.push(data['ad_name']);
+                    }
+                case 'inline_link_click_ctr':
+                    return row.push(data['inline_link_click_ctr']/100);
+            default:          
+                    return row.push(data[field.getId()]);
+            }});
+        return { values: row };
+        });
+    }
+   
+   /**
+    * getData()
+    * Desc - envia os dados para o dataStudio
+    */
+   function getData(request) {
+   
+    var requestedFieldIds = request.fields.map(function(field) {
+        return field.name;
+    });
+   
+    var requestedFields = getFields(request).forIds(requestedFieldIds);
+     
+    var time = {
+        start:request.dateRange.startDate,
+        end:request.dateRange.endDate
+    }
+     
+    var token = getToken()
+    var configParam = request.configParams
+     
+    var arrColuns = []
+    var colunsSplit = configParam.column.split(',')
+    for(var i in colunsSplit){
+        if(colunsSplit[i] == 'actions_Quiz_Lead' || colunsSplit[i] == 'actions_Quiz_Lead_UTUA'){
+            if(arrColuns.indexOf('actions') == -1){
+                arrColuns.push('actions')
+            }
+        }
+        else if(colunsSplit[i] == 'cost_per_action_type_Quiz_Lead' || colunsSplit[i] == 'cost_per_action_type_Quiz_Lead_UTUA'){
+            if(arrColuns.indexOf('cost_per_action_type') == -1){
+                arrColuns.push('cost_per_action_type')
+            }
+        }
+        else{
+            arrColuns.push(colunsSplit[i])
+        }
+    }
+    configParam.column = arrColuns.join(',')
+     
+     
+    var Arr_id_ad_account = configParam.account.split(',')
+    var dataArr = []
+    for(i in Arr_id_ad_account){
+        var parsedResponse = getReport(Arr_id_ad_account[i],token,time,configParam)
+        dataArr = dataArr.concat(parsedResponse)
+        Utilities.sleep(6000)
+    }
+   
+    var rows = responseToRows(requestedFields, dataArr,configParam);
+     
+    return {
+        schema: requestedFields.build(),
+        rows: rows
+    };
+   }
+   
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////API FB///////////////////////////////////////////////////////////////////
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  
+    function urlEncode(url){
+        var urlbase = url.split('?',1)
+        var arg = url.substring(url.indexOf('?')+1)
+        argArr = arg.split('&').map(function(iten){keyvalue = iten.split('=');return keyvalue[0]+'='+encodeURIComponent(keyvalue[1])})
+        return urlbase+'?'+argArr.join('&')
+    }
+    
+   /**
+    * getdataToArr(url)
+    * Desc - Junta todas as paginas da requisiçao
+    * @param url - url da requisiçao
+    * @return Respos
+    */
+    function getdataToArr(url){
+        var data = []
+        var resp = JSON.parse(UrlFetchApp.fetch(url)) 
+        while(resp.data){
+            Utilities.sleep(5000)
+            if(resp.error){
+                data = []
+                break
+            }      
+            else{
+                data = data.concat(resp.data)
+                if(resp.paging){
+                if(resp.paging.next){
+                    resp = JSON.parse(UrlFetchApp.fetch((resp.paging.next)));
+                }
+                else{
+                    resp = {}
+                }
+                }else{
+                    resp = {}
+                }
+            }
+        }
+        return data
+    }
+   
+    /**
+    * getReport(id_adAccount,token,time,configParam)
+    * Desc - Envia a requisição e retorna o resposta
+    * @param id_adAccount - id da conta de anúncio
+    * @param token - Token de autenticação
+    * @param time - periodo de tempo do report
+    * @param configParams - Configuraçoes do Conector
+    * @return Respos
+    */
+    function getReport(id_adAccount, token, time, configParam) {
+        var fieldsArr = []
+        fieldsArr.push(configParam.column)
+        fieldsArr.push(mapLevel()[configParam.dimensions])
+        var  data = []
+        data.push("limit=100000")
+        data.push("level="+configParam.dimensions)
+        data.push("filtering=[]")
+        data.push("breakdowns=[]")  
+        data.push('time_range={"since":"'+time.start+'","until":"'+time.end+'"}')
+        
+        if(configParam.date){
+            data.push("time_increment=1")
+        }
+        data.push("fields="+fieldsArr.join(','))
+        data.push("access_token="+token)
+
+        var resp = getdataToArr(urlEncode("https://graph.facebook.com/v7.0/act_"+id_adAccount+"/insights?"+data.join('&')));
+
+        if(configParam.status  && !(configParam.dimensions == 'account')){
+        var urlstatus = urlEncode("https://graph.facebook.com/v7.0/act_"+id_adAccount+"/"+configParam.dimensions+"s?"+'time_range={"since":"'+time.start+'","until":"'+time.end+'"}&fields=effective_status&'+"access_token="+token)
+
+        var statusArr = getdataToArr(urlstatus);
+        resp =  resp.map(function(iten){
+                statusIten = statusArr.find(function(sttiten){return sttiten.id == iten[configParam.dimensions+"_id"]})
+                if(statusIten){
+                    if(statusIten.effective_status){
+                        iten.effective_status = statusIten.effective_status
+                    }else{
+                        iten.effective_status = ""
+                    }
+                }
+                else{
+                    iten.effective_status = ""
+                }
+                return iten
+            })
+        }
+
+        if(configParam.budget && !(configParam.dimensions == 'account')){
+            var urlbudget = urlEncode("https://graph.facebook.com/v7.0/act_"+id_adAccount+"/campaigns?"+'time_range={"since":"'+time.start+'","until":"'+time.end+'"}&fields=daily_budget&'+"access_token="+token)
+
+            var budgetArr = getdataToArr(urlbudget);
+            resp = resp.map(function(iten) {
+                budgetIten = budgetArr.find(function(bdgiten){return bdgiten.id == iten["campaign_id"]})
+                if(budgetIten){
+                    if(budgetIten.daily_budget){
+                        iten.daily_budget = budgetIten.daily_budget
+                    }else{
+                        iten.daily_budget = ""
+                    }
+                }
+                else{
+                    iten.daily_budget = ""
+                }
+                return iten
+            })
+        } 
+        return resp
+    }
+   
